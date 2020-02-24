@@ -8,7 +8,6 @@
 ### 1. Source data
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
-   library (tidyverse)
    library (janitor) 
    library (spotifyr)
 
@@ -17,24 +16,30 @@
       client_secret=Sys.getenv("SPOTIFY_CLIENT_SECRET")
       )
 
-   songs_raw <- get_my_recently_played(limit = 10) %>% 
+   songs_raw <- get_my_recently_played(limit = 50) %>% 
       clean_names()
 ```
    
 ### 2. Transform data
 ```{r transform, message = F}
 
-  library (lubridate)
-  library (kableExtra)
+   library (tidyverse)
+   library (lubridate)
+   library (kableExtra)
 
-  songs <- songs_raw %>%
-    mutate(
-       artist_name = map_chr(track_artists, function(x) x$name[1]),
-       played_at = as_datetime(played_at),
-       played_at = with_tz(played_at, tzone = "America/Chicago")
-       ) %>% 
-    select(artist_name, track_name, track_album_name, played_at) %>% 
-    kable()
+   songs_raw %>%
+      mutate(
+         artist_name = map_chr(track_artists, function(x) x$name[1]),
+         played_at = as_datetime(played_at),
+         played_at = with_tz(played_at, tzone = "America/Chicago")
+         ) %>% 
+      rename (
+         release = track_album_release_date,
+         album_name = track_album_name
+         ) %>%
+      select (artist_name, track_name, release, played_at) %>%
+      write_csv ("songs.csv") %>%
+      kable ()
 ```
 
 #3a.  Visualize - text level
