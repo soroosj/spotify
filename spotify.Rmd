@@ -1,0 +1,58 @@
+----
+   title: "Spotify"
+   author: "Joel Soroos"
+   date: "February 24, 2020"
+   output: pdf_document
+---
+
+### 1. Source data
+```{r source, warning = TRUE, results = FALSE, message = FALSE}
+
+   library (tidyverse)
+   library (janitor) 
+   library (spotifyr)
+
+   access_token <- get_spotify_access_token(
+      client_id=Sys.getenv("SPOTIFY_CLIENT_ID"),
+      client_secret=Sys.getenv("SPOTIFY_CLIENT_SECRET")
+      )
+
+   songs_raw <- get_my_recently_played(limit = 10) %>% 
+      clean_names()
+```
+   
+### 2. Transform data
+```{r transform, message = F}
+
+  library (lubridate)
+  library (kableExtra)
+
+  songs <- songs_raw %>%
+    mutate(
+       artist_name = map_chr(track_artists, function(x) x$name[1]),
+       played_at = as_datetime(played_at),
+       played_at = with_tz(played_at, tzone = "America/Chicago")
+       ) %>% 
+    select(artist_name, track_name, track_album_name, played_at) %>% 
+    kable()
+```
+
+#3a.  Visualize - text level
+```{r chart, warning = TRUE, results = FALSE, message = FALSE}
+
+   library (kableExtra)
+
+   tweets %>%
+      head (12) %>%
+      kable () %>%
+      kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+
+
+#3b.  Visualize - aggregate level
+```{r}
+
+  tweets_agg %>%
+      kable () %>%
+      kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
