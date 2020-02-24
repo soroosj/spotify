@@ -25,21 +25,19 @@
 
    library (tidyverse)
    library (lubridate)
-   library (kableExtra)
 
-   songs_raw %>%
+   songs <- songs_raw %>%
       mutate(
          artist_name = map_chr(track_artists, function(x) x$name[1]),
          played_at = as_datetime(played_at),
-         played_at = with_tz(played_at, tzone = "America/Chicago")
+         played_at = with_tz(played_at, tzone = "America/Chicago"),
+         release = year(as_datetime(track_album_release_date))
          ) %>% 
       rename (
-         release = track_album_release_date,
          album_name = track_album_name
          ) %>%
       select (artist_name, track_name, release, played_at) %>%
-      write_csv ("songs.csv") %>%
-      kable ()
+      write_csv ("songs.csv") 
 ```
 
 #3a.  Visualize - text level
@@ -47,17 +45,20 @@
 
    library (kableExtra)
 
-   tweets %>%
-      head (12) %>%
+   songs %>%
+      head (10) %>%
       kable () %>%
-      kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+      kable_styling(bootstrap_options = "striped", full_width = F, position = "left") %>%
+      write_file("songs.html")
 ```
 
 
 #3b.  Visualize - aggregate level
 ```{r}
 
-  tweets_agg %>%
-      kable () %>%
-      kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
-```
+get_my_top_artists_or_tracks(type = 'artists', time_range = 'long_term', limit = 5) %>% 
+    select(name, genres) %>% 
+    rowwise %>% 
+    mutate(genres = paste(genres, collapse = ', ')) %>% 
+    ungroup %>% 
+    kable()
