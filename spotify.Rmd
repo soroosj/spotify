@@ -21,7 +21,7 @@
 ```
    
 ### 2. Transform data
-```{r transform, message = F}
+```{r transform, message = F, results = F}
 
    library (tidyverse)
    library (lubridate)
@@ -56,9 +56,9 @@
 #3b.  Visualize - aggregate level
 ```{r}
 
-get_my_top_artists_or_tracks(type = 'artists', time_range = 'long_term', limit = 5) %>% 
-    select(name, genres) %>% 
-    rowwise %>% 
-    mutate(genres = paste(genres, collapse = ', ')) %>% 
-    ungroup %>% 
-    kable()
+get_my_top_artists_or_tracks(type = 'tracks', time_range = 'long_term', limit = 50) %>% 
+    mutate(artist.name = map_chr(artists, function(x) x$name[1])) %>% 
+    select(name, artist.name, album.name) %>% 
+    kable () %>%
+    kable_styling(bootstrap_options = "striped", full_width = F, position = "left") 
+```
