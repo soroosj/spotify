@@ -36,6 +36,34 @@
          }) %>% 
      reduce(rbind)
    
+   fav_tracks %>%
+     select (track.id, track.name)
+             
+             
+             
+   fav_artists %>%
+      count(id, sort = TRUE) %>%
+      left_join(fav_artists, by = 'id',.) %>%
+      unique() %>%
+      select(-id) %>%
+      arrange (-n)
+```
+   
+### Favorite artists
+```{r}
+
+   library (tidyverse)
+   library (kableExtra)
+
+   fav_tracks <-
+     ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
+     seq() %>%
+     map(function(x) {
+       get_my_saved_tracks(
+          limit = 50, offset = (x - 1) * 50)
+         }) %>% 
+     reduce(rbind)
+   
    fav_artists <- fav_tracks %>%
      select (track.artists) %>%
      reduce (rbind) %>%
@@ -49,7 +77,7 @@
       select(-id) %>%
       arrange (-n)
 ```
-   
+
    
 ### 2. Most recently played
 ```{r transform, message = F, results = F, warning = F}
@@ -70,19 +98,16 @@
          album_name = track_album_name
          ) %>%
       select (track_id, artist_name, track_name, release, played_at) %>%
+      distinct (track_id, .keep_all = T) %>%
       write_csv ("songs.csv") 
 
-   songs %>%
-      head (10) %>%
-      kable () %>%
-      kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
-
    recent_tracks <- songs %>%
+      select (track_id) %>%
       pull (track_id)
    
    songs_audio_features <- get_track_audio_features (recent_tracks) %>%
-      left_join(songs) %>%
-      select()
+      left_join(songs, by = c("id" = "track_id")) %>%
+      select (artist_name: release, danceability:tempo)
 ```
 
 
