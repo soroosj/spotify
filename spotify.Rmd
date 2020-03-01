@@ -5,27 +5,60 @@
    output: pdf_document
 ---
 
-### 1. Source data
+### 1. Activate Spotify connection
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
-   library (janitor) 
    library (spotifyr)
+   library (janitor) 
 
    access_token <- get_spotify_access_token(
       client_id=Sys.getenv("SPOTIFY_CLIENT_ID"),
       client_secret=Sys.getenv("SPOTIFY_CLIENT_SECRET")
       )
+   
+   my_id <- Sys.getenv("SPOTIFY_USER_ID")
+   #my_plists <- get_user_playlists(my_id)
+```
+
+
+### Favorite artists
+```{r}
+
+   library (tidyverse)
+   library (kableExtra)
+
+   fav_tracks <-
+     ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
+     seq() %>%
+     map(function(x) {
+       get_my_saved_tracks(
+          limit = 50, offset = (x - 1) * 50)
+         }) %>% 
+     reduce(rbind)
+   
+   fav_artists <- fav_tracks %>%
+     select (track.artists) %>%
+     reduce (rbind) %>%
+     reduce (rbind) %>%
+     select (id, name)
+   
+   fav_artists %>%
+      count(id, sort = TRUE) %>%
+      left_join(fav_artists, by = 'id',.) %>%
+      unique() %>%
+      select(-id) %>%
+      arrange (-n)
+```
+   
+   
+### 2. Most recently played
+```{r transform, message = F, results = F, warning = F}
+
+   library (lubridate)
 
    songs_raw <- get_my_recently_played(limit = 50) %>% 
       clean_names()
-```
    
-### 2. Transform data
-```{r transform, message = F, results = F}
-
-   library (tidyverse)
-   library (lubridate)
-
    songs <- songs_raw %>%
       mutate(
          artist_name = map_chr(track_artists, function(x) x$name[1]),
@@ -36,29 +69,34 @@
       rename (
          album_name = track_album_name
          ) %>%
-      select (artist_name, track_name, release, played_at) %>%
+      select (track_id, artist_name, track_name, release, played_at) %>%
       write_csv ("songs.csv") 
-```
-
-#3a.  Visualize - text level
-```{r chart, warning = TRUE, results = FALSE, message = FALSE}
-
-   library (kableExtra)
 
    songs %>%
       head (10) %>%
       kable () %>%
-      kable_styling(bootstrap_options = "striped", full_width = F, position = "left") %>%
-      write_file("songs.html")
+      kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+
+   recent_tracks <- songs %>%
+      pull (track_id)
+   
+   songs_audio_features <- get_track_audio_features (recent_tracks) %>%
+      left_join(songs) %>%
+      select()
 ```
 
 
-#3b.  Visualize - aggregate level
+#3.  Top all-time songs
 ```{r}
 
 get_my_top_artists_or_tracks(type = 'tracks', time_range = 'long_term', limit = 50) %>% 
     mutate(artist.name = map_chr(artists, function(x) x$name[1])) %>% 
-    select(name, artist.name, album.name) %>% 
+    select(name, artist.name, album.name) %>%
     kable () %>%
-    kable_styling(bootstrap_options = "striped", full_width = F, position = "left") 
+    kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
 ```
+
+
+
+
+
