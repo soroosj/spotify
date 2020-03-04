@@ -22,7 +22,7 @@
 
 
 ### 2. Favorite tracks audio features
-```{r}
+```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
    library (tidyverse)
    library (kableExtra)
@@ -34,7 +34,8 @@
        get_my_saved_tracks(
           limit = 50, offset = (x - 1) * 50)
          }) %>% 
-     reduce(rbind)
+     reduce (rbind) %>%
+     unnest (track.artists)
    
    fav_tracks_unique <- fav_tracks %>%
       distinct (track.id) %>%
@@ -42,7 +43,10 @@
    
    fav_tracks_audio_features <-get_track_audio_features (fav_tracks_unique) %>%
       right_join(fav_tracks, by = c("id" = "track.id")) %>%
-      select (track.artists, track.name, track.popularity, track.album.release_date, danceability:tempo)
+      select (name, track.name, track.popularity, danceability:tempo) %>%
+      rename (artist.name = name)
+   
+   #https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
 ```
 
 
