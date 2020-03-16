@@ -29,6 +29,7 @@
 
    library (tidyverse)
    library (ggrepel)
+   library (ggdark)
 
    favorite_tracks <-
      ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
@@ -53,6 +54,7 @@
       mutate (
          duration_min = duration_ms / 1000 / 60,
          country = str_extract(track.external_ids.isrc, "^.{2}"),
+         track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}")),
          country = recode (country, "QM" = "US", "QZ" = "US")
          ) %>%
       select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration_min, country) %>%
@@ -70,7 +72,21 @@
                ),
          size = 2
          ) +
-      scale_color_viridis_d() 
+      theme(
+            plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", color = "#CC1100", margin = margin (0,0,20,0)),
+            plot.caption = element_text (hjust = 1.0, size = 9, face = "plain", margin = margin (20,0,0,0)),
+            plot.caption.position = "plot",
+            axis.text.x = element_text(hjust = 0, vjust = 0, size = 10, margin = margin (0,0,0,0)),
+            #panel.grid.major = element_line(color = "grey1", size = 1),
+            panel.grid.minor.x = element_blank()
+            ) +
+      labs(
+         title = "Most loved tracks",
+         caption = "Visualization: Joel Soroos @soroosj  |  Data: Spotify API",
+         x = "Valence",
+         y = "Tempo"
+         ) +
+      ggsave("songs.png")
 ```
 
 
