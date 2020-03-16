@@ -38,6 +38,7 @@
      reduce (rbind) %>%
      unnest (track.artists)
    
+   #remove duplicate tracks by including first named artist only
    favorite_tracks_unique <- favorite_tracks %>%
       distinct (track.id) %>%
       pull (track.id)
