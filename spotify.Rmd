@@ -18,13 +18,10 @@
    
    my_id <- Sys.getenv("SPOTIFY_USER_ID")
    #my_plists <- get_user_playlists(my_id)
-   
-
-#https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
 ```
 
 
-### 2. favorite tracks - audio features
+### 2. source favorite tracks
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
    library (tidyverse)
@@ -44,8 +41,14 @@
    favorite_tracks_unique <- favorite_tracks %>%
       distinct (track.id) %>%
       pull (track.id)
-   
+```
+
+
+### 3. add audio features to favorite tracks
+```{r}
+
    favorite_tracks_features <-get_track_audio_features (favorite_tracks_unique) %>%
+   #See definitions here: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
       right_join(favorite_tracks, by = c("id" = "track.id")) %>%
       rename (
          artist.name = name,
@@ -59,8 +62,13 @@
          ) %>%
       select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration_min, country) %>%
       distinct (track.name, .keep_all = T)
-   
-   ggplot (favorite_tracks_features, aes (x = valence, y = tempo, label = track.name)) +
+```
+
+
+### 4. visualize
+```{r}
+ 
+  ggplot (favorite_tracks_features, aes (x = valence, y = tempo, label = track.name)) +
       geom_point () +
       geom_label_repel(
          data = favorite_tracks_features %>% 
@@ -74,95 +82,17 @@
          ) +
       theme(
             plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", color = "#CC1100", margin = margin (0,0,20,0)),
-            plot.caption = element_text (hjust = 1.0, size = 9, face = "plain", margin = margin (20,0,0,0)),
+            plot.caption = element_text (hjust = 1.0, size = 8, face = "plain", margin = margin (20,0,0,0)),
             plot.caption.position = "plot",
             axis.text.x = element_text(hjust = 0, vjust = 0, size = 10, margin = margin (0,0,0,0)),
             #panel.grid.major = element_line(color = "grey1", size = 1),
-            panel.grid.minor.x = element_blank()
+            panel.grid.minor = element_blank()
             ) +
       labs(
-         title = "Most loved tracks",
+         title = "My Favorite Tracks",
          caption = "Visualization: Joel Soroos @soroosj  |  Data: Spotify API",
          x = "Valence",
          y = "Tempo"
          ) +
       ggsave("songs.png")
 ```
-
-
-### 3.  favorite tracks - artist count
-```{r}
-
-   library (tidyverse)
-
-   favorite_tracks <-
-     ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
-     seq() %>%
-     map(function(x) {
-       get_my_saved_tracks(
-          limit = 50, offset = (x - 1) * 50)
-         }) %>% 
-     reduce(rbind)
-   
-   favorite_artists <- favorite_tracks %>%
-     select (track.artists) %>%
-     reduce (rbind) %>%
-     reduce (rbind) %>%
-     select (id, name)
-   
-   favorite_artists %>%
-      count(id, sort = TRUE) %>%
-      left_join(favorite_artists, by = 'id',.) %>%
-      unique() %>%
-      select(-id) %>%
-      arrange (-n)
-```
-
-
-### 3. Recently played - audio features
-```{r transform, message = F, results = F, warning = F}
-
-   library (lubridate)
-
-   recent_raw <- get_my_recently_played(limit = 50) %>% 
-      clean_names()
-   
-   recent <- recent_raw %>%
-      mutate(
-         artist_name = map_chr(track_artists, function(x) x$name[1]),
-         played_at = as_datetime(played_at),
-         played_at = with_tz(played_at, tzone = "America/Chicago"),
-         release = year(as_datetime(track_album_release_date))
-         ) %>% 
-      rename (
-         album_name = track_album_name
-         ) %>%
-      select (track_id, artist_name, track_name, release, played_at) %>%
-      distinct (track_id, .keep_all = T) 
-
-   recent_tracks <- recent %>%
-      select (track_id) %>%
-      pull (track_id)
-   
-   recent_audio_features <- get_track_audio_features (recent_tracks) %>%
-      left_join(recent, by = c("id" = "track_id")) %>%
-      select (artist_name: release, danceability:tempo)
-```
-
-
-### 4.  Top all-time songs
-```{r}
-
-   library (kableExtra)
-
-   get_my_top_artists_or_tracks(type = 'tracks', time_range = 'long_term', limit = 50) %>% 
-       mutate(artist.name = map_chr(artists, function(x) x$name[1])) %>% 
-       select(name, artist.name, album.name) %>%
-       kable () %>%
-       kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
-```
-
-
-
-
-
