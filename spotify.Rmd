@@ -18,16 +18,19 @@
    
    my_id <- Sys.getenv("SPOTIFY_USER_ID")
    #my_plists <- get_user_playlists(my_id)
+   
+
+#https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
 ```
 
 
-### 2. Favorite tracks - audio features
+### 2. favorite tracks - audio features
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
    library (tidyverse)
-   library (kableExtra)
+   library (ggrepel)
 
-   fav_tracks <-
+   favorite_tracks <-
      ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
      seq() %>%
      map(function(x) {
@@ -37,26 +40,46 @@
      reduce (rbind) %>%
      unnest (track.artists)
    
-   fav_tracks_unique <- fav_tracks %>%
+   favorite_tracks_unique <- favorite_tracks %>%
       distinct (track.id) %>%
       pull (track.id)
    
-   fav_tracks_audio_features <-get_track_audio_features (fav_tracks_unique) %>%
-      right_join(fav_tracks, by = c("id" = "track.id")) %>%
-      select (name, track.name, track.popularity, danceability:tempo) %>%
-      rename (artist.name = name) %>%
+   favorite_tracks_features <-get_track_audio_features (favorite_tracks_unique) %>%
+      right_join(favorite_tracks, by = c("id" = "track.id")) %>%
+      rename (
+         artist.name = name,
+         popularity = track.popularity
+         ) %>%
+      mutate (
+         duration_min = duration_ms / 1000 / 60,
+         country = str_extract(track.external_ids.isrc, "^.{2}"),
+         country = recode (country, "QM" = "US", "QZ" = "US")
+         ) %>%
+      select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration_min, country) %>%
       distinct (track.name, .keep_all = T)
    
-   #https://stackoverflow.com/questions/4227223/convert-a-list-to-a-data-frame
+   ggplot (favorite_tracks_features, aes (x = valence, y = tempo, label = track.name)) +
+      geom_point () +
+      geom_label_repel(
+         data = favorite_tracks_features %>% 
+            filter (
+               tempo > 175 |
+               tempo < 85 |
+               valence > .90 |
+               valence < .25
+               ),
+         size = 2
+         ) +
+      scale_color_viridis_d() 
 ```
 
 
-### 3.  Favorite tracks - artist count
+### 3.  favorite tracks - artist count
 ```{r}
 
    library (tidyverse)
 
-   fav_tracks <-
+   favorite_tracks <-
      ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
      seq() %>%
      map(function(x) {
@@ -65,15 +88,15 @@
          }) %>% 
      reduce(rbind)
    
-   fav_artists <- fav_tracks %>%
+   favorite_artists <- favorite_tracks %>%
      select (track.artists) %>%
      reduce (rbind) %>%
      reduce (rbind) %>%
      select (id, name)
    
-   fav_artists %>%
+   favorite_artists %>%
       count(id, sort = TRUE) %>%
-      left_join(fav_artists, by = 'id',.) %>%
+      left_join(favorite_artists, by = 'id',.) %>%
       unique() %>%
       select(-id) %>%
       arrange (-n)
