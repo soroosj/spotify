@@ -58,7 +58,7 @@
       mutate (
          duration_min = duration_ms / 1000 / 60,
          country = str_extract(track.external_ids.isrc, "^.{2}"),
-         track.name = ifelse (str_length (track.name) <= 25, track.name, str_extract(track.name, "^.{25}")),
+         track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}")),
          country = recode (country, "QM" = "US", "QZ" = "US")
          ) %>%
       select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration_min, country) %>%
@@ -99,10 +99,10 @@
 ```
 
 
-5.  Visualize - bar chart
+5.  Visualize - bar chart (one variable)
 ```{r}
  
-   favorite_tracks_features %>%
+ favorite_tracks_features %>%
       arrange (-tempo) %>%
       slice (
          1:5, 
@@ -133,4 +133,46 @@
             title = "Tempo"
             ) +
          ggsave("tempo.png")
+```
+
+
+6.  Visualize - bar chart (multiple variables)
+```{r}
+ 
+   attributes <- c("danceability", "energy", "valence", "tempo", "popularity")
+   
+    scatter_fun = function(x) {
+      favorite_tracks_features %>%
+      arrange (-x) 
+    }
+    
+    
+      slice (
+         1:5, 
+         (n()-4):n()
+         ) %>%
+      mutate (bar_color = ifelse (x > median (x), "Darkgreen", "Red")) %>%
+      ggplot (aes (x = reorder (track.name, .data[[x]]), y = .data[[x]], label = round(.data[[x]],0)), size = 1) +
+          geom_col (aes(fill = I(bar_color))) + 
+          geom_text (
+            position = position_stack(vjust = 0.96),
+            color = "white"
+            ) +
+         geom_text(
+            aes(label=track.name),
+            position = position_stack(vjust = 0.02),
+            color = "white", hjust = 0
+            ) +
+         coord_flip () +
+         theme(
+               plot.title = element_text(hjust = 0.5, size = 15, face = "bold", color = "#CC1100"),
+               axis.text = element_blank (), 
+               axis.title = element_blank(),
+               axis.ticks = element_blank (),
+               panel.grid = element_blank(),
+               panel.background = element_blank()
+               ) +
+       labs(title = x)
+    }
+
 ```
