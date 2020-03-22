@@ -58,7 +58,7 @@
       mutate (
          duration_min = duration_ms / 1000 / 60,
          country = str_extract(track.external_ids.isrc, "^.{2}"),
-         track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}")),
+         track.name = ifelse (str_length (track.name) <= 25, track.name, str_extract(track.name, "^.{25}")),
          country = recode (country, "QM" = "US", "QZ" = "US")
          ) %>%
       select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration_min, country) %>%
@@ -85,7 +85,7 @@
             plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", color = "#CC1100", margin = margin (0,0,20,0)),
             plot.caption = element_text (hjust = 1.0, size = 8, face = "plain", margin = margin (20,0,0,0)),
             plot.caption.position = "plot",
-            axis.text.x = element_text(hjust = 0, vjust = 0, size = 10, margin = margin (0,0,0,0)),
+            axis.text = element_text(hjust = 0, vjust = 0, size = 9),
             #panel.grid.major = element_line(color = "grey1", size = 1),
             panel.grid.minor = element_blank()
             ) +
@@ -96,4 +96,41 @@
          y = "Tempo"
          ) +
       ggsave("songs.png")
+```
+
+
+5.  Visualize - bar chart
+```{r}
+ 
+   favorite_tracks_features %>%
+      arrange (-tempo) %>%
+      slice (
+         1:5, 
+         (n()-4):n()
+         ) %>%
+      mutate (bar_color = ifelse (tempo > median (tempo), "Darkgreen", "Red")) %>%
+      ggplot (aes (x = reorder (track.name, tempo), y = tempo, label = round(tempo,0)), size = 1) +
+         geom_col (aes(fill = I(bar_color))) + 
+         geom_text (
+            position = position_stack(vjust = 0.96),
+            color = "white"
+         ) +
+         geom_text(
+            aes(label=track.name),
+            position = position_stack(vjust = 0.02),
+            color = "white", hjust = 0
+            ) +
+         coord_flip () +
+         theme(
+               plot.title = element_text(hjust = 0.5, size = 15, face = "bold", color = "#CC1100"),
+               axis.text = element_blank (), 
+               axis.title = element_blank(),
+               axis.ticks = element_blank (),
+               panel.grid = element_blank(),
+               panel.background = element_blank()
+               ) +
+         labs(
+            title = "Tempo"
+            ) +
+         ggsave("tempo.png")
 ```
