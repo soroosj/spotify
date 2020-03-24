@@ -138,42 +138,43 @@
 
 6.  Visualize - bar chart (multiple variables)
 ```{r}
+
+   library (glue)
  
    #https://stackoverflow.com/questions/22309285/how-to-use-a-variable-to-specify-column-name-in-ggplot/53168593#53168593
    attributes <- c("danceability", "energy", "valence", "tempo", "popularity")
    
-    scatter_fun = function(name = track.name, attribute = tempo) {
-      name = ensym (name)
+    scatter_fun = function(attribute = tempo) {
       attribute = ensym (attribute)
       ggplot (
          data = favorite_tracks_features %>%
             arrange (-!!attribute) %>%
             slice (1:5, (n()-4):n()) %>%
             mutate (bar_color = ifelse (!!attribute > median (!!attribute), "Darkgreen", "Red")),
-         aes (x = reorder (!!name, !!attribute), y = !!attribute), 
+         aes (x = reorder (track.name, !!attribute), y = !!attribute), 
          size = 1
          ) +
          geom_col (aes(fill = I(bar_color))) + 
          geom_text (
-            aes (label = !!attribute),
-            position = position_stack(vjust = 0.96),
+            aes (label = round(!!attribute,0)),
+            position = position_stack(vjust = 0.94),
             color = "white"
             ) + 
          geom_text(
-            aes (label = !!name),
+            aes (label = track.name),
             position = position_stack(vjust = 0.02),
             color = "white", hjust = 0
             ) +
          coord_flip () +
          theme(
-            plot.title = element_text(hjust = 0.5, size = 15, face = "bold", color = "#CC1100"),
+            plot.title = element_text(hjust = 0.5, size = 15, face = "bold", color = "black"),
             axis.text = element_blank (), 
             axis.title = element_blank(),
             axis.ticks = element_blank (),
             panel.grid = element_blank(),
             panel.background = element_blank()
-            )
-       #labs(title = !!attribute)
+            ) +
+       labs(title = glue({str_to_title(attribute)}))
     }
 
 ```
