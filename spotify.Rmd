@@ -1,23 +1,20 @@
 ----
    title: "Spotify"
    author: "Joel Soroos"
-   date: "March 9, 2020"
+   date: "March 31, 2020"
    output: pdf_document
 ---
+
 
 ### 1. Activate Spotify connection
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
    library (spotifyr)
-   library (janitor)  
 
    access_token <- get_spotify_access_token(
       client_id=Sys.getenv("SPOTIFY_CLIENT_ID"),
       client_secret=Sys.getenv("SPOTIFY_CLIENT_SECRET")
       )
-   
-   my_id <- Sys.getenv("SPOTIFY_USER_ID")
-   #my_plists <- get_user_playlists(my_id)
 ```
 
 
@@ -25,8 +22,6 @@
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
    library (tidyverse)
-   library (ggrepel)
-   library (ggdark)
 
    favorite_tracks <-
      ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
@@ -49,7 +44,7 @@
 ```{r}
 
    favorite_tracks_features <-get_track_audio_features (favorite_tracks_unique) %>%
-   #See definitions here: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
+   #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
       right_join(favorite_tracks, by = c("id" = "track.id")) %>%
       rename (
          artist.name = name,
@@ -66,15 +61,12 @@
 ```
 
 
-4.  Visualize chart function
+4.  Visualize function
 ```{r warning = TRUE, results = FALSE, message = FALSE}
 
    library (glue)
- 
-   #https://stackoverflow.com/questions/22309285/how-to-use-a-variable-to-specify-column-name-in-ggplot/53168593#53168593
-   attributes <- c("danceability", "energy", "valence", "tempo", "popularity")
-   
-    scatter_fun = function(attribute = tempo) {
+
+    attributes_plot = function(attribute = tempo) {
       attribute = ensym (attribute)
       ggplot (
          data = favorite_tracks_features %>%
@@ -96,12 +88,11 @@
             ) +
        labs(title = glue({str_to_title(attribute)}))
     }
-
 ```
 
 
 #5.  Create and combine charts
-```{r}
+```{r warning = TRUE, results = FALSE, message = FALSE}
   
    library (purrr)
    library (cowplot)
@@ -109,9 +100,8 @@
    attributes <- c("danceability", "energy", "valence", "tempo", "popularity")
    attributes <- set_names(attributes)
 
-   song_plots <- map(attributes, scatter_fun)
+   song_plots <- map(attributes, attributes_plot)
    
    song_plots_combine <- plot_grid(plotlist = song_plots)
    song_plots_combine
-   
 ```
