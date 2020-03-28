@@ -9,7 +9,7 @@
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
    library (spotifyr)
-   library (janitor) 
+   library (janitor)  
 
    access_token <- get_spotify_access_token(
       client_id=Sys.getenv("SPOTIFY_CLIENT_ID"),
@@ -58,7 +58,7 @@
       mutate (
          duration_min = duration_ms / 1000 / 60,
          country = str_extract(track.external_ids.isrc, "^.{2}"),
-         track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}")),
+         track.name = ifelse (str_length (track.name) <= 19, track.name, str_extract(track.name, "^.{19}")),
          country = recode (country, "QM" = "US", "QZ" = "US")
          ) %>%
       select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration_min, country) %>%
@@ -66,78 +66,8 @@
 ```
 
 
-### 4. visualize
-```{r}
- 
-  ggplot (favorite_tracks_features, aes (x = valence, y = tempo, label = track.name)) +
-      geom_point () +
-      geom_label_repel(
-         data = favorite_tracks_features %>% 
-            filter (
-               tempo > 175 |
-               tempo < 85 |
-               valence > .90 |
-               valence < .25
-               ),
-         size = 2
-         ) +
-      theme(
-            plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", color = "#CC1100", margin = margin (0,0,20,0)),
-            plot.caption = element_text (hjust = 1.0, size = 8, face = "plain", margin = margin (20,0,0,0)),
-            plot.caption.position = "plot",
-            axis.text = element_text(hjust = 0, vjust = 0, size = 9),
-            #panel.grid.major = element_line(color = "grey1", size = 1),
-            panel.grid.minor = element_blank()
-            ) +
-      labs(
-         title = "My Favorite Tracks",
-         caption = "Visualization: Joel Soroos @soroosj  |  Data: Spotify API",
-         x = "Valence",
-         y = "Tempo"
-         ) +
-      ggsave("songs.png")
-```
-
-
-5.  Visualize - bar chart (one variable)
-```{r}
- 
- favorite_tracks_features %>%
-      arrange (-tempo) %>%
-      slice (
-         1:5, 
-         (n()-4):n()
-         ) %>%
-      mutate (bar_color = ifelse (tempo > median (tempo), "Darkgreen", "Red")) %>%
-      ggplot (aes (x = reorder (track.name, tempo), y = tempo, label = round(tempo,0)), size = 1) +
-         geom_col (aes(fill = I(bar_color))) + 
-         geom_text (
-            position = position_stack(vjust = 0.96),
-            color = "white"
-         ) +
-         geom_text(
-            aes(label=track.name),
-            position = position_stack(vjust = 0.02),
-            color = "white", hjust = 0
-            ) +
-         coord_flip () +
-         theme(
-               plot.title = element_text(hjust = 0.5, size = 15, face = "bold", color = "#CC1100"),
-               axis.text = element_blank (), 
-               axis.title = element_blank(),
-               axis.ticks = element_blank (),
-               panel.grid = element_blank(),
-               panel.background = element_blank()
-               ) +
-         labs(
-            title = "Tempo"
-            ) +
-         ggsave("tempo.png")
-```
-
-
-6.  Visualize - bar chart (multiple variables)
-```{r}
+4.  Visualize chart function
+```{r warning = TRUE, results = FALSE, message = FALSE}
 
    library (glue)
  
@@ -155,20 +85,10 @@
          size = 1
          ) +
          geom_col (aes(fill = I(bar_color))) + 
-         geom_text (
-            aes (label = round(!!attribute,0)),
-            position = position_stack(vjust = 0.94),
-            color = "white"
-            ) + 
-         geom_text(
-            aes (label = track.name),
-            position = position_stack(vjust = 0.02),
-            color = "white", hjust = 0
-            ) +
          coord_flip () +
          theme(
-            plot.title = element_text(hjust = 0.5, size = 15, face = "bold", color = "black"),
-            axis.text = element_blank (), 
+            plot.title = element_text(hjust = 0.5, size = 10, face = "bold", color = "black"),
+            axis.text = element_text (size = 8),
             axis.title = element_blank(),
             axis.ticks = element_blank (),
             panel.grid = element_blank(),
@@ -177,4 +97,21 @@
        labs(title = glue({str_to_title(attribute)}))
     }
 
+```
+
+
+#5.  Create and combine charts
+```{r}
+  
+   library (purrr)
+   library (cowplot)
+
+   attributes <- c("danceability", "energy", "valence", "tempo", "popularity")
+   attributes <- set_names(attributes)
+
+   song_plots <- map(attributes, scatter_fun)
+   
+   song_plots_combine <- plot_grid(plotlist = song_plots)
+   song_plots_combine
+   
 ```
