@@ -6,7 +6,7 @@
 ---
 
 
-### 1. Activate Spotify connection
+### 1. activate Spotify connection
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
    library (spotifyr)
@@ -51,12 +51,13 @@
          popularity = track.popularity
          ) %>%
       mutate (
-         duration_min = duration_ms / 1000 / 60,
+         duration = duration_ms / 1000 / 60,
          country = str_extract(track.external_ids.isrc, "^.{2}"),
-         track.name = ifelse (str_length (track.name) <= 19, track.name, str_extract(track.name, "^.{19}")),
-         country = recode (country, "QM" = "US", "QZ" = "US")
+         track.name = str_remove_all (track.name, "Remaster"),
+         track.name = str_remove (track.name,"Remastered"),
+         track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}"))
          ) %>%
-      select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration_min, country) %>%
+      select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration, country) %>%
       distinct (track.name, .keep_all = T)
 ```
 
@@ -69,20 +70,20 @@
     attributes_plot = function(attribute = tempo) {
       attribute = ensym (attribute)
       ggplot (
-         data = favorite_tracks_features %>%
-            arrange (-!!attribute) %>%
-            slice (1:5, (n()-4):n()) %>%
-            mutate (bar_color = ifelse (!!attribute > median (!!attribute), "Darkgreen", "Red")),
-         aes (x = reorder (track.name, !!attribute), y = !!attribute), 
-         size = 1
-         ) +
+            data = favorite_tracks_features %>%
+               arrange (-!!attribute) %>%
+               slice (1:5, (n()-4):n()) %>%
+               mutate (bar_color = ifelse (!!attribute > median (!!attribute), "Darkgreen", "Red")),
+            aes (x = reorder (track.name, !!attribute), y = !!attribute), 
+            size = 1
+            ) +
          geom_col (aes(fill = I(bar_color))) + 
+         scale_y_continuous (n.breaks = 4) +
          coord_flip () +
          theme(
             plot.title = element_text(hjust = 0.5, size = 10, face = "bold", color = "black"),
             axis.text = element_text (size = 8),
             axis.title = element_blank(),
-            axis.ticks = element_blank (),
             panel.grid = element_blank(),
             panel.background = element_blank()
             ) +
@@ -94,14 +95,12 @@
 #5.  Create and combine charts
 ```{r warning = TRUE, results = FALSE, message = FALSE}
   
-   library (purrr)
    library (cowplot)
 
-   attributes <- c("danceability", "energy", "valence", "tempo", "popularity")
-   attributes <- set_names(attributes)
+   attributes <- c("danceability", "energy", "valence", "tempo", "popularity", "duration")
 
    song_plots <- map(attributes, attributes_plot)
    
-   song_plots_combine <- plot_grid(plotlist = song_plots)
-   song_plots_combine
+   song_plots_combine <- plot_grid(plotlist = song_plots) +
+      ggsave("attributes.png", song_plots_combine)
 ```
