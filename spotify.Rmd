@@ -23,6 +23,7 @@
 
    library (tidyverse)
 
+   #source favorite tracks - default is listed twice if multiple artists
    favorite_tracks <-
      ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
      seq() %>%
@@ -34,17 +35,19 @@
      unnest (track.artists)
    
    #remove duplicate tracks by including first named artist only
-   favorite_tracks_unique <- favorite_tracks %>%
-      distinct (track.id) %>%
-      pull (track.id)
+      favorite_tracks_unique <- favorite_tracks %>%
+         distinct (track.id) %>%
+         pull (track.id)
 ```
 
 
 ### 3. add audio features to favorite tracks
 ```{r}
 
-   favorite_tracks_features <-get_track_audio_features (favorite_tracks_unique) %>%
    #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
+   
+   favorite_tracks_features <-get_track_audio_features (favorite_tracks_unique) %>%
+   
       right_join(favorite_tracks, by = c("id" = "track.id")) %>%
       rename (
          artist.name = name,
@@ -67,7 +70,8 @@
 
    library (glue)
 
-    attributes_plot = function(attribute = tempo) {
+   #function to create bar chart for dynamic variable
+   attributes_plot = function(attribute = tempo) {
       attribute = ensym (attribute)
       ggplot (
             data = favorite_tracks_features %>%
@@ -97,22 +101,25 @@
   
    library (patchwork)
 
-   attributes <- c("danceability", "energy", "valence", "tempo", "popularity", "duration")
+   #define variables to parse charts
+      attributes <- c("valence", "energy", "tempo", "danceability", "duration", "popularity")
 
-   song_plots <- map(attributes, attributes_plot)
+   #create charts for each attribute
+      song_plots <- map(attributes, attributes_plot)
    
-   song_plots_combine <- 
-      song_plots[[1]] + song_plots[[2]]+ song_plots[[3]]+ song_plots[[4]]+ song_plots[[5]]+ song_plots[[6]] +
-      plot_annotation (
-         title =  "Attributes of my favorite songs on Spotify",
-         caption = "Visualization: Joel Soroos @soroosj  |  Data: Spotify API",
-         theme =
-            theme (
-               plot.title = element_text(hjust = 0, vjust = 0, size = 15, face = "bold", margin = margin (0,0,20,0)),
-            plot.title.position = "plot",
-            plot.caption = element_text (hjust = 1, size = 8, face = "plain", margin = margin (20,0,0,0)),
-            plot.caption.position = "plot")
-         )
+   #combine charts into grid
+      song_plots_combine <- 
+         song_plots[[1]] + song_plots[[2]]+ song_plots[[3]]+ song_plots[[4]]+ song_plots[[5]]+ song_plots[[6]] +
+         plot_annotation (
+            title =  "Attributes of my favorite songs on Spotify",
+            caption = "Visualization: Joel Soroos @soroosj  |  Data: Spotify API",
+            theme =
+               theme (
+                  plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,20,0)),
+                  plot.title.position = "plot",
+                  plot.caption = element_text (hjust = 1, size = 8, face = "plain", margin = margin (20,0,0,0)),
+                  plot.caption.position = "plot")
+                  )
    
-      ggsave("attributes_patchwork.png", song_plots_combine)
+   ggsave("song_attributes.png", song_plots_combine)
 ```
