@@ -87,7 +87,7 @@
             panel.grid = element_blank(),
             panel.background = element_blank()
             ) +
-       labs(title = glue({str_to_title(attribute)}))
+       labs (title = glue({str_to_title(attribute)}))
     }
 ```
 
@@ -95,12 +95,24 @@
 #5.  Create and combine charts
 ```{r warning = TRUE, results = FALSE, message = FALSE}
   
-   library (cowplot)
+   library (patchwork)
 
    attributes <- c("danceability", "energy", "valence", "tempo", "popularity", "duration")
 
    song_plots <- map(attributes, attributes_plot)
    
-   song_plots_combine <- plot_grid(plotlist = song_plots) +
-      ggsave("attributes.png", song_plots_combine)
+   song_plots_combine <- 
+      song_plots[[1]] + song_plots[[2]]+ song_plots[[3]]+ song_plots[[4]]+ song_plots[[5]]+ song_plots[[6]] +
+      plot_annotation (
+         title =  "Attributes of my favorite songs on Spotify",
+         caption = "Visualization: Joel Soroos @soroosj  |  Data: Spotify API",
+         theme =
+            theme (
+               plot.title = element_text(hjust = 0, vjust = 0, size = 15, face = "bold", margin = margin (0,0,20,0)),
+            plot.title.position = "plot",
+            plot.caption = element_text (hjust = 1, size = 8, face = "plain", margin = margin (20,0,0,0)),
+            plot.caption.position = "plot")
+         )
+   
+      ggsave("attributes_patchwork.png", song_plots_combine)
 ```
