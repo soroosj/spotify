@@ -24,15 +24,15 @@
    library (tidyverse)
 
    #source favorite tracks - default is listed twice if multiple artists
-   favorite_tracks <-
-     ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
-     seq() %>%
-     map(function(x) {
-       get_my_saved_tracks(
-          limit = 50, offset = (x - 1) * 50)
-         }) %>% 
-     reduce (rbind) %>%
-     unnest (track.artists)
+      favorite_tracks <-
+        ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
+        seq() %>%
+        map(function(x) {
+          get_my_saved_tracks(
+             limit = 50, offset = (x - 1) * 50)
+            }) %>% 
+        reduce (rbind) %>%
+        unnest (track.artists)
    
    #remove duplicate tracks by including first named artist only
       favorite_tracks_unique <- favorite_tracks %>%
@@ -47,7 +47,6 @@
    #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
    
    favorite_tracks_features <-get_track_audio_features (favorite_tracks_unique) %>%
-   
       right_join(favorite_tracks, by = c("id" = "track.id")) %>%
       rename (
          artist.name = name,
@@ -55,7 +54,6 @@
          ) %>%
       mutate (
          duration = duration_ms / 1000 / 60,
-         country = str_extract(track.external_ids.isrc, "^.{2}"),
          track.name = str_remove_all (track.name, "Remaster"),
          track.name = str_remove (track.name,"Remastered"),
          track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}"))
@@ -71,27 +69,27 @@
    library (glue)
 
    #function to create bar chart for dynamic variable
-   attributes_plot = function(attribute = tempo) {
-      attribute = ensym (attribute)
-      ggplot (
-            data = favorite_tracks_features %>%
-               arrange (-!!attribute) %>%
-               slice (1:5, (n()-4):n()) %>%
-               mutate (bar_color = ifelse (!!attribute > median (!!attribute), "Darkgreen", "Red")),
-            aes (x = reorder (track.name, !!attribute), y = !!attribute), 
-            size = 1
-            ) +
-         geom_col (aes(fill = I(bar_color))) + 
-         scale_y_continuous (n.breaks = 4) +
-         coord_flip () +
-         theme(
-            plot.title = element_text(hjust = 0.5, size = 10, face = "bold", color = "black"),
-            axis.text = element_text (size = 8),
-            axis.title = element_blank(),
-            panel.grid = element_blank(),
-            panel.background = element_blank()
-            ) +
-       labs (title = glue({str_to_title(attribute)}))
+      attributes_plot = function(attribute = tempo) {
+         attribute = ensym (attribute)
+         ggplot (
+               data = favorite_tracks_features %>%
+                  arrange (-!!attribute) %>%
+                  slice (1:5, (n()-4):n()) %>%
+                  mutate (bar_color = ifelse (!!attribute > median (!!attribute), "Darkgreen", "Red")),
+               aes (x = reorder (track.name, !!attribute), y = !!attribute), 
+               size = 1
+               ) +
+            geom_col (aes(fill = I(bar_color))) + 
+            scale_y_continuous (n.breaks = 4) +
+            coord_flip () +
+            theme(
+               plot.title = element_text(hjust = 0.5, size = 10, face = "bold", color = "black"),
+               axis.text = element_text (size = 8),
+               axis.title = element_blank(),
+               panel.grid = element_blank(),
+               panel.background = element_blank()
+               ) +
+          labs (title = glue({str_to_title(attribute)}))
     }
 ```
 
@@ -121,5 +119,6 @@
                   plot.caption.position = "plot")
                   )
    
-   ggsave("song_attributes.png", song_plots_combine)
+   #save chart grid to file
+      ggsave("song_attributes.png", song_plots_combine)
 ```
