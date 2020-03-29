@@ -58,7 +58,7 @@
          track.name = str_remove (track.name,"Remastered"),
          track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}"))
          ) %>%
-      select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration, country) %>%
+      select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration) %>%
       distinct (track.name, .keep_all = T)
 ```
 
@@ -69,7 +69,7 @@
    library (glue)
 
    #function to create bar chart for dynamic variable
-      attributes_plot = function(attribute = tempo) {
+      attributes_plot = function(attribute = "tempo") {
          attribute = ensym (attribute)
          ggplot (
                data = favorite_tracks_features %>%
@@ -81,6 +81,11 @@
                ) +
             geom_col (aes(fill = I(bar_color))) + 
             scale_y_continuous (n.breaks = 4) +
+            geom_hline(
+               data = favorite_tracks_features %>% summarize (med = median(!!attribute)),
+               aes(yintercept = med), 
+               alpha = 0.2, linetype = "dashed", size = 0.75
+               ) +
             coord_flip () +
             theme(
                plot.title = element_text(hjust = 0.5, size = 10, face = "bold", color = "black"),
@@ -109,13 +114,15 @@
       song_plots_combine <- 
          song_plots[[1]] + song_plots[[2]]+ song_plots[[3]]+ song_plots[[4]]+ song_plots[[5]]+ song_plots[[6]] +
          plot_annotation (
-            title =  "Attributes of my favorite songs on Spotify",
+            title =  "Favorite songs on Spotify",
+            subtitle = "Top 5 attributes in green, bottom 5 in red",
             caption = "Visualization: Joel Soroos @soroosj  |  Data: Spotify API",
             theme =
                theme (
-                  plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,20,0)),
+                  plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,5,0)),
                   plot.title.position = "plot",
-                  plot.caption = element_text (hjust = 1, size = 8, face = "plain", margin = margin (20,0,0,0)),
+                  plot.subtitle = element_text(hjust = 0.5, vjust = 0, size = 10, margin = margin (0,0,15,0)),
+                  plot.caption = element_text (hjust = 1, size = 8, face = "plain", margin = margin (15,0,0,0)),
                   plot.caption.position = "plot")
                   )
    
