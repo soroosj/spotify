@@ -86,9 +86,16 @@
                aes(yintercept = med), 
                alpha = 0.2, linetype = "dashed", size = 0.75
                ) +
+            geom_rug (
+               data = favorite_tracks_features,
+               aes (y = !!attribute),
+               inherit.aes = F,
+               sides = "l",
+               alpha = 0.3
+               ) +
             coord_flip () +
             theme(
-               plot.title = element_text(hjust = 0.5, size = 10, face = "bold", color = "black"),
+               plot.title = element_text(hjust = 0.5, size = 10, face = "bold", color = "black", margin = margin (10,0,10,0)),
                axis.text = element_text (size = 8),
                axis.title = element_blank(),
                panel.grid = element_blank(),
