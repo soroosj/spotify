@@ -46,6 +46,8 @@
 
    #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
    
+   library (lubridate)
+
    favorite_tracks_features <-get_track_audio_features (favorite_tracks_unique) %>%
       right_join(favorite_tracks, by = c("id" = "track.id")) %>%
       rename (
@@ -56,9 +58,10 @@
          duration = duration_ms / 1000 / 60,
          track.name = str_remove_all (track.name, "Remaster"),
          track.name = str_remove (track.name,"Remastered"),
-         track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}"))
+         track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}")),
+         release = year (as_date(track.album.release_date))
          ) %>%
-      select (artist.name, track.name, danceability, energy, valence, tempo, popularity, duration) %>%
+      select (artist.name, track.name, danceability, energy, valence, tempo, release, duration) %>%
       distinct (track.name, .keep_all = T)
 ```
 
@@ -112,7 +115,7 @@
    library (patchwork)
 
    #define variables to parse charts
-      attributes <- c("valence", "energy", "tempo", "danceability", "duration", "popularity")
+      attributes <- c("valence", "energy", "tempo", "danceability", "duration", "release")
 
    #create charts for each attribute
       song_plots <- map(attributes, attributes_plot)
