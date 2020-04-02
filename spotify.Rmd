@@ -78,17 +78,20 @@
                data = favorite_tracks_features %>%
                   arrange (-!!attribute) %>%
                   slice (1:5, (n()-4):n()) %>%
-                  mutate (bar_color = ifelse (!!attribute > median (!!attribute), "Darkgreen", "Red")),
+                  mutate (bar_color = ifelse (!!attribute > median (!!attribute), "Lightgreen", "Red")),
                aes (x = reorder (track.name, !!attribute), y = !!attribute), 
                size = 1
                ) +
-            geom_col (aes(fill = I(bar_color))) + 
+            geom_point (
+               aes(color = I(bar_color)),
+               shape = 19
+               ) + 
             scale_y_continuous (n.breaks = 4) +
-            geom_hline(
-               data = favorite_tracks_features %>% summarize (med = median(!!attribute)),
-               aes(yintercept = med), 
-               alpha = 0.2, linetype = "dashed", size = 0.75
-               ) +
+            #geom_hline(
+               #data = favorite_tracks_features %>% summarize (med = median(!!attribute)),
+               #aes(yintercept = med), 
+               #alpha = 0.2, size = 0.75
+               #) +
             geom_rug (
                data = favorite_tracks_features,
                aes (y = !!attribute),
@@ -126,13 +129,13 @@
          plot_annotation (
             title =  "Favorite songs on Spotify",
             subtitle = "Top 5 attributes in green, bottom 5 in red",
-            caption = "Visualization: Joel Soroos @soroosj  |  Data: Spotify API",
+            caption = "Visualization: Joel Soroos @soroosj\n Data: Spotify API",
             theme =
                theme (
                   plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,5,0)),
                   plot.title.position = "plot",
                   plot.subtitle = element_text(hjust = 0.5, vjust = 0, size = 10, margin = margin (0,0,15,0)),
-                  plot.caption = element_text (hjust = 1, size = 8, face = "plain", margin = margin (15,0,0,0)),
+                  plot.caption = element_text (hjust = 0, size = 8, face = "plain", margin = margin (15,0,0,0)),
                   plot.caption.position = "plot")
                   )
    
