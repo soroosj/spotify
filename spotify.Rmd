@@ -58,8 +58,13 @@
          duration = duration_ms / 1000 / 60,
          track.name = str_remove_all (track.name, "Remaster"),
          track.name = str_remove (track.name,"Remastered"),
-         track.name = ifelse (str_length (track.name) <= 20, track.name, str_extract(track.name, "^.{20}")),
-         release = year (as_date(track.album.release_date))
+         track.name = ifelse (str_length (track.name) <= 22, track.name, str_extract(track.name, "^.{22}")),
+         release = ifelse (
+            track.album.release_date_precision == "year", 
+            as.integer(track.album.release_date),
+            year(as_date(track.album.release_date))
+            ),
+         release = release - 1980
          ) %>%
       select (artist.name, track.name, danceability, energy, valence, tempo, release, duration) %>%
       distinct (track.name, .keep_all = T)
@@ -86,12 +91,12 @@
                aes(color = I(bar_color)),
                shape = 19
                ) + 
-            scale_y_continuous (n.breaks = 4) +
-            #geom_hline(
-               #data = favorite_tracks_features %>% summarize (med = median(!!attribute)),
-               #aes(yintercept = med), 
-               #alpha = 0.2, size = 0.75
-               #) +
+            geom_segment (
+               aes(
+                  xend = reorder (track.name, !!attribute), y = 0, yend = !!attribute,
+                  color = I(bar_color)
+                  )
+               ) + 
             geom_rug (
                data = favorite_tracks_features,
                aes (y = !!attribute),
@@ -99,11 +104,13 @@
                sides = "l",
                alpha = 0.3
                ) +
+            scale_y_continuous (n.breaks = 4) +
             coord_flip () +
             theme(
-               plot.title = element_text(hjust = 0.5, size = 10, face = "bold", color = "black", margin = margin (10,0,10,0)),
+               plot.title = element_text(hjust = 0.5, vjust = 0, size = 10, face = "bold", margin = margin (10,0,10,0)),
                axis.text = element_text (size = 8),
                axis.title = element_blank(),
+               axis.ticks = element_blank(),
                panel.grid = element_blank(),
                panel.background = element_blank()
                ) +
@@ -130,14 +137,13 @@
             title =  "Favorite songs on Spotify",
             subtitle = "Top 5 attributes in green, bottom 5 in red",
             caption = "Visualization: Joel Soroos @soroosj\n Data: Spotify API",
-            theme =
-               theme (
-                  plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,5,0)),
-                  plot.title.position = "plot",
-                  plot.subtitle = element_text(hjust = 0.5, vjust = 0, size = 10, margin = margin (0,0,15,0)),
-                  plot.caption = element_text (hjust = 0, size = 8, face = "plain", margin = margin (15,0,0,0)),
-                  plot.caption.position = "plot")
-                  )
+            theme = theme (
+               plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,5,0)),
+               plot.title.position = "plot",
+               plot.subtitle = element_text(hjust = 0.5, vjust = 0, size = 10, margin = margin (0,0,15,0)),
+               plot.caption = element_text (hjust = 0, size = 8, face = "plain", margin = margin (15,0,0,0)),
+               plot.caption.position = "plot")
+               )
    
    #save chart grid to file
       ggsave("song_attributes.png", song_plots_combine)
