@@ -42,7 +42,7 @@
 
 
 ### 3. add audio features to favorite tracks
-```{r}
+```{r warning = TRUE, results = FALSE, message = FALSE}
 
    #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
    
@@ -56,8 +56,8 @@
          ) %>%
       mutate (
          duration = duration_ms / 1000 / 60,
-         track.name = str_remove_all (track.name, "Remaster"),
-         track.name = str_remove (track.name,"Remastered"),
+         track.name = str_remove (track.name, c("Remaster", "Remastered")),
+         track.name = str_remove (track.name,"[(-].+"),
          track.name = ifelse (str_length (track.name) <= 22, track.name, str_extract(track.name, "^.{22}")),
          release = ifelse (
             track.album.release_date_precision == "year", 
@@ -66,7 +66,7 @@
             ),
          release = release - 1980
          ) %>%
-      select (artist.name, track.name, danceability, energy, valence, tempo, release, duration) %>%
+      select (artist.name, track.name, danceability, energy, valence, tempo, duration, release) %>%
       distinct (track.name, .keep_all = T)
 ```
 
@@ -114,7 +114,10 @@
                panel.grid = element_blank(),
                panel.background = element_blank()
                ) +
-          labs (title = glue({str_to_title(attribute)}))
+          labs (
+             title = glue({str_to_title(attribute)})
+             )
+         
     }
 ```
 
@@ -134,13 +137,13 @@
       song_plots_combine <- 
          song_plots[[1]] + song_plots[[2]]+ song_plots[[3]]+ song_plots[[4]]+ song_plots[[5]]+ song_plots[[6]] +
          plot_annotation (
-            title =  "Favorite songs on Spotify",
-            subtitle = "Top 5 attributes in green, bottom 5 in red",
-            caption = "Visualization: Joel Soroos @soroosj\n Data: Spotify API",
+            title =  "My favorite Spotify songs' attributes",
+            subtitle = "Largest 5 per attribute in green, smallest 5 in red.  Bottom rug is entire distribution.",
+            caption = "Duration = song length in minutes.  Release = number of years since 1980.  \nVisualization: Joel Soroos @soroosj    |  Data: Spotify API",
             theme = theme (
                plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,5,0)),
                plot.title.position = "plot",
-               plot.subtitle = element_text(hjust = 0.5, vjust = 0, size = 10, margin = margin (0,0,15,0)),
+               plot.subtitle = element_text(hjust = 0.5, vjust = 0, size = 9, margin = margin (0,0,15,0)),
                plot.caption = element_text (hjust = 0, size = 8, face = "plain", margin = margin (15,0,0,0)),
                plot.caption.position = "plot")
                )
