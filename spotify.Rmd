@@ -1,7 +1,7 @@
 ----
-   title: "Spotify"
+   title: "Favorite Spotify Songs Attributes"
    author: "Joel Soroos"
-   date: "March 31, 2020"
+   date: "April 4, 2020"
    output: pdf_document
 ---
 
@@ -117,7 +117,6 @@
           labs (
              title = glue({str_to_title(attribute)})
              )
-         
     }
 ```
 
@@ -139,7 +138,7 @@
          plot_annotation (
             title =  "My favorite Spotify songs' attributes",
             subtitle = "Largest 5 per attribute in green, smallest 5 in red.  Bottom rug is entire distribution.",
-            caption = "Duration = song length in minutes.  Release = number of years since 1980.  \nVisualization: Joel Soroos @soroosj    |  Data: Spotify API",
+            caption = "Duration = song length in minutes.  Release = number of years since 1980.  \nVisualization: Joel Soroos @soroosj    |    Data: Spotify API",
             theme = theme (
                plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,5,0)),
                plot.title.position = "plot",
