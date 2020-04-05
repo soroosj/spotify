@@ -48,10 +48,14 @@
    #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
    
    library (lubridate)
-
+   
    favorite_tracks_features <- 
-      get_track_audio_features(favorite_tracks_unique[1:100]) %>%
-      bind_rows(get_track_audio_features (favorite_tracks_unique[101:200])) %>%
+      seq (1, nrow(favorite_tracks),100) %>%
+      map(function(x) {
+          get_track_audio_features (favorite_tracks_unique[x:(x+99)])
+            }) %>%
+      reduce(rbind) %>%
+      drop_na() %>%
       right_join(favorite_tracks, by = c("id" = "track.id")) %>%
       rename (artist.name = name) %>%
       mutate (
@@ -68,45 +72,6 @@
          ) %>%
       select (artist.name, track.name, danceability, energy, valence, tempo, duration, release) %>%
       distinct (track.name, .keep_all = T)
-    
-```
-
-### 3. add audio features to favorite tracks
-```{r warning = TRUE, results = FALSE, message = FALSE}
-
-   #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
-   
-   #library (lubridate)
-
-   #favorite_tracks_features <- get_track_audio_features(favorite_tracks_unique[1:100]) %>%
-      #bind_rows(get_track_audio_features (favorite_tracks_unique[101:200]))
-   
-   #favorite_tracks_features <- 
-      #seq (1, nrow(favorite_tracks),100) %>%
-      #seq(1) %>%
-      #map(function(x) {
-          #get_track_audio_features (favorite_tracks_unique[x:x+99])
-            #}) %>%
-      #unnest()
-   
-   #favorite_tracks_features <- favorite_tracks_features %>%
-      #right_join(favorite_tracks, by = c("id" = "track.id")) %>%
-      #rename (artist.name = name) %>%
-     # mutate (
-         #duration = duration_ms / 1000 / 60,
-         #track.name = str_remove (track.name, c("Remaster", "Remastered")),
-         #track.name = str_remove (track.name,"[(-].+"),
-         #track.name = ifelse (str_length (track.name) <= 22, track.name, str_extract(track.name, "^.{22}")),
-         #release = ifelse (
-            #track.album.release_date_precision == "year", 
-            #as.integer(track.album.release_date),
-            #year(as_date(track.album.release_date))
-            #),
-         #release = release - 1980
-         #) %>%
-      #select (artist.name, track.name, danceability, energy, valence, tempo, duration, release) %>%
-      #distinct (track.name, .keep_all = T)
-    
 ```
 
 
