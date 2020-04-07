@@ -24,21 +24,22 @@
    library (tidyverse)
 
    #source favorite tracks - default is listed twice if multiple artists
-   #code chunk in this section sourced from: https://rpubs.com/womeimingzi11/how_my_spotify_looks_like
-      favorite_tracks <-
+      #code chunk in this section sourced from: https://rpubs.com/womeimingzi11/how_my_spotify_looks_like
+   favorite_tracks <-
         ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
         seq() %>%
-        map(function(x) {
+        map(function(x) {           #circumvents 50 track limit from Spotify
           get_my_saved_tracks(
-             limit = 50, offset = (x - 1) * 50)
+             limit = 50,
+             offset = (x - 1) * 50)
             }) %>% 
         reduce (rbind) %>%
-        unnest (track.artists)
+        unnest (track.artists)      #simplifies list to multiple rows for tracks with two artists
    
    #remove duplicate tracks by including first named artist only
-      favorite_tracks_unique <- favorite_tracks %>%
-         distinct (track.id) %>%
-         pull (track.id)
+      favorite_tracks_ids<- favorite_tracks %>%
+         distinct (track.id) %>%       #eliminates duplicate rows by songs with > 1 artist (picks 1st)
+         pull (track.id)            
 ```
 
 
@@ -52,23 +53,23 @@
    favorite_tracks_features <- 
       seq (1, nrow(favorite_tracks),100) %>%
       map(function(x) {
-          get_track_audio_features (favorite_tracks_unique[x:(x+99)])
+          get_track_audio_features (favorite_tracks_ids[x:(x+99)])   #circumvents max of 100 track IDs
             }) %>%
-      reduce(rbind) %>%
-      drop_na() %>%
+      reduce(rbind) %>%             #simplifies list and appends previously nested frames
+      drop_na() %>%                 #removes N/As resulting from liked song totals less than 100 multiple
       right_join(favorite_tracks, by = c("id" = "track.id")) %>%
       rename (artist.name = name) %>%
       mutate (
-         duration = duration_ms / 1000 / 60,
+         duration = duration_ms / 1000 / 60,                      #converts milliseconds to minutes
          track.name = str_remove (track.name, c("Remaster", "Remastered")),
-         track.name = str_remove (track.name,"[(-].+"),
+         track.name = str_remove (track.name,"[(-].+"),          #removes parentheticals in titles
          track.name = ifelse (str_length (track.name) <= 22, track.name, str_extract(track.name, "^.{22}")),
          release = ifelse (
-            track.album.release_date_precision == "year", 
+            track.album.release_date_precision == "year",         #some songs only lists years not dates
             as.integer(track.album.release_date),
             year(as_date(track.album.release_date))
             ),
-         release = release - 1980
+         release = release - 1980                            #enables bar charts to start at 0
          ) %>%
       select (artist.name, track.name, danceability, energy, valence, tempo, duration, release) %>%
       distinct (track.name, .keep_all = T)
