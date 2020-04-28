@@ -211,9 +211,9 @@ summary {
       client_secret=Sys.getenv(&quot;SPOTIFY_CLIENT_SECRET&quot;)
       )</code></pre>
 </div>
-<div id="source-favorite-tracks" class="section level3">
-<h3>2. Source favorite tracks</h3>
-<p>I decided to focus my analysis on liked tracks (called “favorites” in the Spotify API). The favorite_tracks function extracts information such as album name and artists.</p>
+<div id="extract-list-of-favorite-song-ids" class="section level3">
+<h3>2. Extract list of favorite song IDs</h3>
+<p>I decided to focus my analysis on liked tracks (called “favorites” in the Spotify API). The favorite_tracks function extracts information such as song name, album name and artist(s).</p>
 <p>Spotify limits the number of tracks per call to 50, much less than my 200 likes. A <a href="https://rpubs.com/womeimingzi11/how_my_spotify_looks_like">clever workaround by Han Chen</a> is to extract multiple tranches of 50 songs the purrr map function.</p>
 <p>The favorite_tracks function returns the output in an unwieldy list format that requires simplification to the more manageable data frame. The artist name creates multiple records per song because multiple artists can be assigned to individual songs. I simplified by unnesting the list so multiple rows per song for each artist. The distinct function helped me consolidate to a unique a list of songs.</p>
 <pre class="r"><code>   library (tidyverse)
@@ -234,7 +234,13 @@ summary {
    #remove duplicate tracks by including first named artist only
       favorite_tracks_ids&lt;- favorite_tracks %&gt;%
          distinct (track.id) %&gt;%       #eliminates duplicate rows by songs with &gt; 1 artist (picks 1st)
-         pull (track.id)            </code></pre>
+         pull (track.id)
+      
+      head (favorite_tracks_ids,10)</code></pre>
+<pre><code>##  [1] &quot;6C4LXC9UFH1IKiHYOp0BiJ&quot; &quot;6ADSaE87h8Y3lccZlBJdXH&quot; &quot;5B6Z7NwVqA7W3UFiqBdEJC&quot;
+##  [4] &quot;2SiXAy7TuUkycRVbbWDEpo&quot; &quot;1hlveB9M6ijHZRbzZ2teyh&quot; &quot;7ihhy2Y8wzP6MUmbx8LYh1&quot;
+##  [7] &quot;6nrdjKxI39FvwMhX5mSLJV&quot; &quot;0cuq829zRNq4AEdmDJA4aw&quot; &quot;0xw22cJECqEQ8RlH0H4sHr&quot;
+## [10] &quot;1OFKUn2VLafrHj7ybnap0Q&quot;</code></pre>
 </div>
 <div id="add-audio-features-to-favorite-tracks" class="section level3">
 <h3>3. Add audio features to favorite tracks</h3>

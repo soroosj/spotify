@@ -24,13 +24,13 @@ Second, you can either embed the Spotify login information directly in the scrip
 ```
 
 
-### 2. Source favorite tracks
+### 2. Extract list of favorite song IDs
 I decided to focus my analysis on liked tracks (called "favorites" in the Spotify API).  The favorite_tracks function extracts information such as song name, album name and artist(s).
 
 Spotify limits the number of tracks per call to 50, much less than my 200 likes.  A [clever workaround by Han Chen](https://rpubs.com/womeimingzi11/how_my_spotify_looks_like) is to extract multiple tranches of 50 songs the purrr map function.  
 
 The favorite_tracks function returns the output in an unwieldy list format that requires simplification to the more manageable data frame.  The artist name creates multiple records per song because multiple artists can be assigned to individual songs.  I simplified by unnesting the list so multiple rows per song for each artist.  The distinct function helped me consolidate to a unique a list of songs.
-```{r source, warning = TRUE, results = FALSE, message = FALSE}
+```{r source, warning = FALSE, message = FALSE}
 
    library (tidyverse)
 
@@ -50,7 +50,9 @@ The favorite_tracks function returns the output in an unwieldy list format that 
    #remove duplicate tracks by including first named artist only
       favorite_tracks_ids<- favorite_tracks %>%
          distinct (track.id) %>%       #eliminates duplicate rows by songs with > 1 artist (picks 1st)
-         pull (track.id)            
+         pull (track.id)
+      
+      head (favorite_tracks_ids,10)
 ```
 
 
