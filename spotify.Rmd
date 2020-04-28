@@ -6,8 +6,14 @@
 ---
 
 
-### 1. activate Spotify connection
-```{r source, warning = TRUE, results = FALSE, message = FALSE}
+### Motivation
+Spotify is an amazing tool to play favorite music, as well as discover new music or rediscover old favorites.  The API in turn provides free access to a wide array of statistics on songs and albums in playlists.
+
+### 1. Activate Spotify connection
+First step is to sign up for a [free Spotify API developer ID and secret token](https://developer.spotify.com/).
+
+Second, you can either embed the Spotify login information directly in the script or assign to an enivronment variable.  The advantage of an environment variable is your private login information will be stored on your computer.  That way your R code can be shared without exposure to your login information being stolen.  The [usethis package](https://community.rstudio.com/t/how-to-set-a-variable-in-renviron/5029/4) simplifies creating and updating environment variables. 
+```{r activate, warning = TRUE, results = FALSE, message = FALSE}
 
    library (spotifyr)
 
@@ -18,7 +24,12 @@
 ```
 
 
-### 2. source favorite tracks
+### 2. Source favorite tracks
+I decided to focus my analysis on liked tracks (called "favorites" in the Spotify API).  The favorite_tracks function extracts information such as song name, album name and artist(s).
+
+Spotify limits the number of tracks per call to 50, much less than my 200 likes.  A [clever workaround by Han Chen](https://rpubs.com/womeimingzi11/how_my_spotify_looks_like) is to extract multiple tranches of 50 songs the purrr map function.  
+
+The favorite_tracks function returns the output in an unwieldy list format that requires simplification to the more manageable data frame.  The artist name creates multiple records per song because multiple artists can be assigned to individual songs.  I simplified by unnesting the list so multiple rows per song for each artist.  The distinct function helped me consolidate to a unique a list of songs.
 ```{r source, warning = TRUE, results = FALSE, message = FALSE}
 
    library (tidyverse)
@@ -43,7 +54,7 @@
 ```
 
 
-### 3. add audio features to favorite tracks
+### 3. Add audio features to favorite tracks
 ```{r warning = TRUE, results = FALSE, message = FALSE}
 
    #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
