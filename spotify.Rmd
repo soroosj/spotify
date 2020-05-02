@@ -1,7 +1,7 @@
 ---
 title: "Spotify Song Analytics"
 author: "Joel Soroos"
-date: '2020-05-21'
+date: '2020-05-04'
 slug: spotify-song-analytics
 tags: []
 categories: []
@@ -11,7 +11,7 @@ categories: []
 \n  
 
 ### Motivation
-Spotify is an amazing tool to play favorite music, as well as discover new music or rediscover old favorites.  The API in turn provides free access to a wide array of statistics on songs and albums in playlists.
+Spotify is an amazing app to play favorite music, discover new music and rediscover old favorites.  In addition, the Spotify API provides free access to a wide array of data on songs, which R users can leverage via Charlie Thompson's [spotifyR package](https://www.rdocumentation.org/packages/spotifyr/versions/2.1.1).  I wanted to learn more about my musical tastes while learning new R skills.
 
 ### 1. Activate Spotify connection
 First step is to sign up for a [free Spotify API developer ID and secret token](https://developer.spotify.com/).
@@ -54,11 +54,9 @@ The favorite_tracks function returns the output in an unwieldy list format that 
 
 
 ### 2b.  Source favorite song features
-Next step is to source song features such as energy, tempo and valence.  Full definitions are available on [Spotify's developer site](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md).  The site again limits the number of songs (to 100 in this case) but can be circumvented via a loop function that breaks into multiples of 100.
+Song features such as energy, tempo and valence are stored in a separate Spotify API table so require a separate function.  Full definitions are available on [Spotify's developer site](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md).
 
-Song duration is clearer in minutes instead of milliseconds.  Also, I cleaned song titles by removing "Remaster", "Remastered" as well as  parenthetical qualifiers.
-
-Initially, I directly charted album release year.  Year differences were impossible to discern because bar charts start as zero.  To spread across the x-axis I converted the release year to years past 1980.
+Spotify again limits the number of songs (to 100 in this case) but can be circumvented via a loop function that breaks into multiples of 100.
 ```{r stats, warning = FALSE, message = FALSE}
    
    library (lubridate)
@@ -73,7 +71,18 @@ Initially, I directly charted album release year.  Year differences were impossi
              get_track_audio_features (favorite_tracks_ids[x:(x+99)])   #circumvents max of 100 track IDs
                }) %>%
          reduce(rbind) %>%             #simplifies list and appends previously nested frames
-         drop_na() %>%                 #removes N/As resulting from liked song totals less than 100 multiple
+         drop_na()
+      
+      glimpse (favorite_tracks_features)
+```
+
+
+### 2c.  Combine song features and statistics
+Spotify assigns an alphanumeric ID code for each song.  The ID is in both the statistics and attributes tables so the two tables can be joined together.
+
+A few other housekeeping items are required before proceeding to the the chart.  First, Song duration is clearer in minutes instead of milliseconds.  Second, I cleaned song titles by removing "Remaster", "Remastered" as well as  parenthetical qualifiers.  Third, I converted album release year to number of years past 1980 to better visually discern year differences (bar charts typically start at zero).
+```{r combine, warning = FALSE, message = FALSE}
+      favorite_tracks_combine <- favorite_tracks_features %>%#removes N/As resulting from liked song totals less than 100 multiple
          right_join(favorite_tracks_stats, by = c("id" = "track.id")) %>%
          rename (artist.name = name) %>%
          mutate (
@@ -98,8 +107,7 @@ Initially, I directly charted album release year.  Year differences were impossi
 ###3a.  Create charts by feature
 Bars represent the top 5 and bottom 5 songs for each attribute.  The bottom rug illustrates the full dispersion.  
 
-A map function is necessary to create the separate charts for each attribute.  The simpler ggplot facet function generates charts via filtering but cannot sort by variable.
-
+A map function creates the separate charts for each attribute.  The simpler ggplot facet function generates charts via filtering but cannot sort by variable.
 ```{r charts, warning = FALSE, message = FALSE}
 
    library (glue)
@@ -110,9 +118,8 @@ A map function is necessary to create the separate charts for each attribute.  T
    #function to create bar chart for dynamic variable
       attributes_plot = function(attribute) {
          attribute = ensym (attribute)
-         #attribute = ifelse(attribute == "duration", attribute, ensym (attribute))
          ggplot (
-               data = favorite_tracks_features %>%
+               data = favorite_tracks_combine %>%
                   arrange (-!!attribute) %>%
                   slice (1:5, (n()-4):n()) %>%
                   mutate (bar_color = ifelse (!!attribute > median (!!attribute), "Lightgreen", "Red")),
@@ -130,7 +137,7 @@ A map function is necessary to create the separate charts for each attribute.  T
                   )
                ) + 
             geom_rug (
-               data = favorite_tracks_features,
+               data = favorite_tracks_combine,
                aes (y = !!attribute),
                inherit.aes = F,
                sides = "l",
@@ -158,7 +165,9 @@ A map function is necessary to create the separate charts for each attribute.  T
 
 ###3b.  Combine charts, add titles/subtitles/captions
 My favorite chart combination package is Thomas Lin Pederson's excellent [patchwork](https://www.rdocumentation.org/packages/patchwork/versions/1.0.0) package.  Charts automatically are aligned vertically and/or horizontally.  I have six charts so by default patchwork prints the first three charts on top row then second three on bottom row.
-```{r combine, warning = TRUE, results = FALSE, message = FALSE}
+
+Results show my musical tastes skew toward songs with greater valence (postive emotions), high energy, low tempo, medium danceability, 4-5 minutes of duration and the 1980s.
+```{r final, warning = TRUE, results = FALSE, message = FALSE}
   
    library (patchwork)
    

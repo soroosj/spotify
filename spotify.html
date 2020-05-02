@@ -11,7 +11,7 @@
 
 <meta name="author" content="Joel Soroos" />
 
-<meta name="date" content="2020-05-21" />
+<meta name="date" content="2020-05-04" />
 
 <title>Spotify Song Analytics</title>
 
@@ -180,7 +180,7 @@ summary {
 
 <h1 class="title toc-ignore">Spotify Song Analytics</h1>
 <h4 class="author">Joel Soroos</h4>
-<h4 class="date">2020-05-21</h4>
+<h4 class="date">2020-05-04</h4>
 
 </div>
 
@@ -188,7 +188,7 @@ summary {
 <p> </p>
 <div id="motivation" class="section level3">
 <h3>Motivation</h3>
-<p>Spotify is an amazing tool to play favorite music, as well as discover new music or rediscover old favorites. The API in turn provides free access to a wide array of statistics on songs and albums in playlists.</p>
+<p>Spotify is an amazing app to play favorite music, discover new music and rediscover old favorites. In addition, the Spotify API provides free access to a wide array of data on songs, which R users can leverage via Charlie Thompson’s <a href="https://www.rdocumentation.org/packages/spotifyr/versions/2.1.1">spotifyR package</a>. I wanted to learn more about my musical tastes while learning new R skills.</p>
 </div>
 <div id="activate-spotify-connection" class="section level3">
 <h3>1. Activate Spotify connection</h3>
@@ -260,9 +260,8 @@ summary {
 </div>
 <div id="b.-source-favorite-song-features" class="section level3">
 <h3>2b. Source favorite song features</h3>
-<p>Next step is to source song features such as energy, tempo and valence. Full definitions are available on <a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md">Spotify’s developer site</a>. The site again limits the number of songs (to 100 in this case) but can be circumvented via a loop function that breaks into multiples of 100.</p>
-<p>Song duration is clearer in minutes instead of milliseconds. Also, I cleaned song titles by removing “Remaster”, “Remastered” as well as parenthetical qualifiers.</p>
-<p>Initially, I directly charted album release year. Year differences were impossible to discern because bar charts start as zero. To spread across the x-axis I converted the release year to years past 1980.</p>
+<p>Song features such as energy, tempo and valence are stored in a separate Spotify API table so require a separate function. Full definitions are available on <a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md">Spotify’s developer site</a>.</p>
+<p>Spotify again limits the number of songs (to 100 in this case) but can be circumvented via a loop function that breaks into multiples of 100.</p>
 <pre class="r"><code>   library (lubridate)
    
       favorite_tracks_ids &lt;- favorite_tracks_stats %&gt;%
@@ -275,7 +274,35 @@ summary {
              get_track_audio_features (favorite_tracks_ids[x:(x+99)])   #circumvents max of 100 track IDs
                }) %&gt;%
          reduce(rbind) %&gt;%             #simplifies list and appends previously nested frames
-         drop_na() %&gt;%                 #removes N/As resulting from liked song totals less than 100 multiple
+         drop_na()
+      
+      glimpse (favorite_tracks_features)</code></pre>
+<pre><code>## Rows: 159
+## Columns: 18
+## $ danceability     &lt;dbl&gt; 0.543, 0.540, 0.628, 0.532, 0.502, 0.694, 0.809, 0.5…
+## $ energy           &lt;dbl&gt; 0.944, 0.429, 0.934, 0.767, 0.924, 0.724, 0.907, 0.9…
+## $ key              &lt;int&gt; 6, 2, 11, 7, 4, 5, 1, 7, 7, 6, 8, 0, 2, 2, 2, 1, 4, …
+## $ loudness         &lt;dbl&gt; -7.495, -11.822, -6.026, -5.509, -6.299, -8.125, -3.…
+## $ mode             &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1…
+## $ speechiness      &lt;dbl&gt; 0.0543, 0.0285, 0.0527, 0.0574, 0.0503, 0.0282, 0.09…
+## $ acousticness     &lt;dbl&gt; 0.402000, 0.000202, 0.006820, 0.002870, 0.012700, 0.…
+## $ instrumentalness &lt;dbl&gt; 5.64e-04, 3.55e-01, 1.11e-05, 5.13e-04, 0.00e+00, 3.…
+## $ liveness         &lt;dbl&gt; 0.0373, 0.1410, 0.0852, 0.3900, 0.1620, 0.1380, 0.04…
+## $ valence          &lt;dbl&gt; 0.7350, 0.1130, 0.4910, 0.7550, 0.9220, 0.8440, 0.96…
+## $ tempo            &lt;dbl&gt; 101.174, 110.171, 126.538, 127.361, 149.186, 119.313…
+## $ type             &lt;chr&gt; &quot;audio_features&quot;, &quot;audio_features&quot;, &quot;audio_features&quot;…
+## $ id               &lt;chr&gt; &quot;6C4LXC9UFH1IKiHYOp0BiJ&quot;, &quot;6ADSaE87h8Y3lccZlBJdXH&quot;, …
+## $ uri              &lt;chr&gt; &quot;spotify:track:6C4LXC9UFH1IKiHYOp0BiJ&quot;, &quot;spotify:tra…
+## $ track_href       &lt;chr&gt; &quot;https://api.spotify.com/v1/tracks/6C4LXC9UFH1IKiHYO…
+## $ analysis_url     &lt;chr&gt; &quot;https://api.spotify.com/v1/audio-analysis/6C4LXC9UF…
+## $ duration_ms      &lt;int&gt; 279440, 295516, 265893, 210173, 219667, 347507, 1324…
+## $ time_signature   &lt;int&gt; 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4…</code></pre>
+</div>
+<div id="c.-combine-song-features-and-statistics" class="section level3">
+<h3>2c. Combine song features and statistics</h3>
+<p>Spotify assigns an alphanumeric ID code for each song. The ID is in both the statistics and attributes tables so the two tables can be joined together.</p>
+<p>A few other housekeeping items are required before proceeding to the the chart. First, Song duration is clearer in minutes instead of milliseconds. Second, I cleaned song titles by removing “Remaster”, “Remastered” as well as parenthetical qualifiers. Third, I converted album release year to number of years past 1980 to better visually discern year differences (bar charts typically start at zero).</p>
+<pre class="r"><code>      favorite_tracks_combine &lt;- favorite_tracks_features %&gt;%#removes N/As resulting from liked song totals less than 100 multiple
          right_join(favorite_tracks_stats, by = c(&quot;id&quot; = &quot;track.id&quot;)) %&gt;%
          rename (artist.name = name) %&gt;%
          mutate (
@@ -294,21 +321,31 @@ summary {
          distinct (track.name, .keep_all = T)
       
       glimpse (favorite_tracks_features)</code></pre>
-<pre><code>## Rows: 156
-## Columns: 8
-## $ artist.name  &lt;chr&gt; &quot;U2&quot;, &quot;U2&quot;, &quot;Ratt&quot;, &quot;AC/DC&quot;, &quot;Twisted Sister&quot;, &quot;Thompson…
-## $ track.name   &lt;chr&gt; &quot;Sunday Bloody Sunday &quot;, &quot;With Or Without You &quot;, &quot;Round …
-## $ danceability &lt;dbl&gt; 0.543, 0.540, 0.628, 0.532, 0.502, 0.694, 0.809, 0.545, …
-## $ energy       &lt;dbl&gt; 0.944, 0.429, 0.934, 0.767, 0.924, 0.724, 0.907, 0.905, …
-## $ valence      &lt;dbl&gt; 0.7350, 0.1130, 0.4910, 0.7550, 0.9220, 0.8440, 0.9610, …
-## $ tempo        &lt;dbl&gt; 101.174, 110.171, 126.538, 127.361, 149.186, 119.313, 96…
-## $ duration     &lt;dbl&gt; 4.657333, 4.925267, 4.431550, 3.502883, 3.661117, 5.7917…
-## $ release      &lt;dbl&gt; 3, 7, 4, 0, 4, 26, 32, 11, 13, 14, 32, 15, 4, 25, 16, 2,…</code></pre>
+<pre><code>## Rows: 159
+## Columns: 18
+## $ danceability     &lt;dbl&gt; 0.543, 0.540, 0.628, 0.532, 0.502, 0.694, 0.809, 0.5…
+## $ energy           &lt;dbl&gt; 0.944, 0.429, 0.934, 0.767, 0.924, 0.724, 0.907, 0.9…
+## $ key              &lt;int&gt; 6, 2, 11, 7, 4, 5, 1, 7, 7, 6, 8, 0, 2, 2, 2, 1, 4, …
+## $ loudness         &lt;dbl&gt; -7.495, -11.822, -6.026, -5.509, -6.299, -8.125, -3.…
+## $ mode             &lt;int&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1…
+## $ speechiness      &lt;dbl&gt; 0.0543, 0.0285, 0.0527, 0.0574, 0.0503, 0.0282, 0.09…
+## $ acousticness     &lt;dbl&gt; 0.402000, 0.000202, 0.006820, 0.002870, 0.012700, 0.…
+## $ instrumentalness &lt;dbl&gt; 5.64e-04, 3.55e-01, 1.11e-05, 5.13e-04, 0.00e+00, 3.…
+## $ liveness         &lt;dbl&gt; 0.0373, 0.1410, 0.0852, 0.3900, 0.1620, 0.1380, 0.04…
+## $ valence          &lt;dbl&gt; 0.7350, 0.1130, 0.4910, 0.7550, 0.9220, 0.8440, 0.96…
+## $ tempo            &lt;dbl&gt; 101.174, 110.171, 126.538, 127.361, 149.186, 119.313…
+## $ type             &lt;chr&gt; &quot;audio_features&quot;, &quot;audio_features&quot;, &quot;audio_features&quot;…
+## $ id               &lt;chr&gt; &quot;6C4LXC9UFH1IKiHYOp0BiJ&quot;, &quot;6ADSaE87h8Y3lccZlBJdXH&quot;, …
+## $ uri              &lt;chr&gt; &quot;spotify:track:6C4LXC9UFH1IKiHYOp0BiJ&quot;, &quot;spotify:tra…
+## $ track_href       &lt;chr&gt; &quot;https://api.spotify.com/v1/tracks/6C4LXC9UFH1IKiHYO…
+## $ analysis_url     &lt;chr&gt; &quot;https://api.spotify.com/v1/audio-analysis/6C4LXC9UF…
+## $ duration_ms      &lt;int&gt; 279440, 295516, 265893, 210173, 219667, 347507, 1324…
+## $ time_signature   &lt;int&gt; 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4…</code></pre>
 </div>
 <div id="a.-create-charts-by-feature" class="section level3">
 <h3>3a. Create charts by feature</h3>
 <p>Bars represent the top 5 and bottom 5 songs for each attribute. The bottom rug illustrates the full dispersion.</p>
-<p>A map function is necessary to create the separate charts for each attribute. The simpler ggplot facet function generates charts via filtering but cannot sort by variable.</p>
+<p>A map function creates the separate charts for each attribute. The simpler ggplot facet function generates charts via filtering but cannot sort by variable.</p>
 <pre class="r"><code>   library (glue)
 
    #define variables to parse charts
@@ -317,9 +354,8 @@ summary {
    #function to create bar chart for dynamic variable
       attributes_plot = function(attribute) {
          attribute = ensym (attribute)
-         #attribute = ifelse(attribute == &quot;duration&quot;, attribute, ensym (attribute))
          ggplot (
-               data = favorite_tracks_features %&gt;%
+               data = favorite_tracks_combine %&gt;%
                   arrange (-!!attribute) %&gt;%
                   slice (1:5, (n()-4):n()) %&gt;%
                   mutate (bar_color = ifelse (!!attribute &gt; median (!!attribute), &quot;Lightgreen&quot;, &quot;Red&quot;)),
@@ -337,7 +373,7 @@ summary {
                   )
                ) + 
             geom_rug (
-               data = favorite_tracks_features,
+               data = favorite_tracks_combine,
                aes (y = !!attribute),
                inherit.aes = F,
                sides = &quot;l&quot;,
@@ -364,6 +400,7 @@ summary {
 <div id="b.-combine-charts-add-titlessubtitlescaptions" class="section level3">
 <h3>3b. Combine charts, add titles/subtitles/captions</h3>
 <p>My favorite chart combination package is Thomas Lin Pederson’s excellent <a href="https://www.rdocumentation.org/packages/patchwork/versions/1.0.0">patchwork</a> package. Charts automatically are aligned vertically and/or horizontally. I have six charts so by default patchwork prints the first three charts on top row then second three on bottom row.</p>
+<p>Results show my musical tastes skew toward songs with greater valence (postive emotions), high energy, low tempo, medium danceability, 4-5 minutes of duration and the 1980s.</p>
 <pre class="r"><code>   library (patchwork)
    
    #combine charts into grid
