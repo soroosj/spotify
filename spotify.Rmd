@@ -1,14 +1,17 @@
 ---
-title: "Spotify Song Analytics"
-author: "Joel Soroos"
-date: '2020-05-04'
+title: Spotify Song Analytics
+author: Joel Soroos
+date: '2020-05-02'
 slug: spotify-song-analytics
-tags: []
 categories: []
---- 
+tags:
+  - tidyverse
+  - r
+  - rstats
+  - spotifyr
+  - purrr
+---
 
-\n  
-\n  
 
 ### Motivation
 Spotify is an amazing app to play favorite music, discover new music and rediscover old favorites.  In addition, the Spotify API provides free access to a wide array of data on songs, which R users can leverage via Charlie Thompson's [spotifyR package](https://www.rdocumentation.org/packages/spotifyr/versions/2.1.1).  I wanted to learn more about my musical tastes while learning new R skills.
