@@ -1,10 +1,14 @@
-----
-   title: "Favorite Spotify Songs Attributes"
-   author: "Joel Soroos"
-   date: "April 4, 2020"
-   output: pdf_document
 ---
+title: "Spotify Song Analytics"
+author: "Joel Soroos"
+date: '2020-05-21'
+slug: spotify-song-analytics
+tags: []
+categories: []
+--- 
 
+\n  
+\n  
 
 ### Motivation
 Spotify is an amazing tool to play favorite music, as well as discover new music or rediscover old favorites.  The API in turn provides free access to a wide array of statistics on songs and albums in playlists.
@@ -24,22 +28,20 @@ Second, you can either embed the Spotify login information directly in the scrip
 ```
 
 
-### 2. Extract list of favorite song IDs
+### 2a. Source favorite song statistics
 I decided to focus my analysis on liked tracks (called "favorites" in the Spotify API).  The favorite_tracks function extracts information such as song name, album name and artist(s).
 
 Spotify limits the number of tracks per call to 50, much less than my 200 likes.  A [clever workaround by Han Chen](https://rpubs.com/womeimingzi11/how_my_spotify_looks_like) is to extract multiple tranches of 50 songs the purrr map function.  
 
-The favorite_tracks function returns the output in an unwieldy list format that requires simplification to the more manageable data frame.  The artist name creates multiple records per song because multiple artists can be assigned to individual songs.  I simplified by unnesting the list so multiple rows per song for each artist.  The distinct function helped me consolidate to a unique a list of songs.
+The favorite_tracks function returns the output in an unwieldy list format that requires simplification to the more manageable data frame.  The artist name creates multiple records per song because multiple artists can be assigned to individual songs.  I simplified by unnesting the list so multiple rows per song for each artist. 
 ```{r source, warning = FALSE, message = FALSE}
 
    library (tidyverse)
 
-   #source favorite tracks - default is listed twice if multiple artists
-      #code chunk in this section sourced from: https://rpubs.com/womeimingzi11/how_my_spotify_looks_like
-   favorite_tracks <-
+   favorite_tracks_stats <-
         ceiling(get_my_saved_tracks(include_meta_info = TRUE)[['total']] / 50) %>%
         seq() %>%
-        map(function(x) {           #circumvents 50 track limit from Spotify
+        map(function(x) {           
           get_my_saved_tracks(
              limit = 50,
              offset = (x - 1) * 50)
@@ -47,56 +49,68 @@ The favorite_tracks function returns the output in an unwieldy list format that 
         reduce (rbind) %>%
         unnest (track.artists)      #simplifies list to multiple rows for tracks with two artists
    
-   #remove duplicate tracks by including first named artist only
-      favorite_tracks_ids<- favorite_tracks %>%
-         distinct (track.id) %>%       #eliminates duplicate rows by songs with > 1 artist (picks 1st)
-         pull (track.id)
-      
-      head (favorite_tracks_ids,10)
+   glimpse (favorite_tracks_stats)
 ```
 
 
-### 3. Add audio features to favorite tracks
-```{r warning = TRUE, results = FALSE, message = FALSE}
+### 2b.  Source favorite song features
+Next step is to source song features such as energy, tempo and valence.  Full definitions are available on [Spotify's developer site](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md).  The site again limits the number of songs (to 100 in this case) but can be circumvented via a loop function that breaks into multiples of 100.
 
-   #Definitions: #https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21/readme.md
+Song duration is clearer in minutes instead of milliseconds.  Also, I cleaned song titles by removing "Remaster", "Remastered" as well as  parenthetical qualifiers.
+
+Initially, I directly charted album release year.  Year differences were impossible to discern because bar charts start as zero.  To spread across the x-axis I converted the release year to years past 1980.
+```{r stats, warning = FALSE, message = FALSE}
    
    library (lubridate)
    
-   favorite_tracks_features <- 
-      seq (1, nrow(favorite_tracks),100) %>%
-      map(function(x) {
-          get_track_audio_features (favorite_tracks_ids[x:(x+99)])   #circumvents max of 100 track IDs
-            }) %>%
-      reduce(rbind) %>%             #simplifies list and appends previously nested frames
-      drop_na() %>%                 #removes N/As resulting from liked song totals less than 100 multiple
-      right_join(favorite_tracks, by = c("id" = "track.id")) %>%
-      rename (artist.name = name) %>%
-      mutate (
-         duration = duration_ms / 1000 / 60,                      #converts milliseconds to minutes
-         track.name = str_remove (track.name, c("Remaster", "Remastered")),
-         track.name = str_remove (track.name,"[(-].+"),          #removes parentheticals in titles
-         track.name = ifelse (str_length (track.name) <= 22, track.name, str_extract(track.name, "^.{22}")),
-         release = ifelse (
-            track.album.release_date_precision == "year",         #some songs only lists years not dates
-            as.integer(track.album.release_date),
-            year(as_date(track.album.release_date))
-            ),
-         release = release - 1980                            #enables bar charts to start at 0
-         ) %>%
-      select (artist.name, track.name, danceability, energy, valence, tempo, duration, release) %>%
-      distinct (track.name, .keep_all = T)
+      favorite_tracks_ids <- favorite_tracks_stats %>%
+         distinct (track.id) %>%       #eliminates duplicate rows by songs with > 1 artist (picks 1st)
+         pull (track.id)
+      
+      favorite_tracks_features <- 
+         seq (1, nrow(favorite_tracks_stats),100) %>%
+         map(function(x) {
+             get_track_audio_features (favorite_tracks_ids[x:(x+99)])   #circumvents max of 100 track IDs
+               }) %>%
+         reduce(rbind) %>%             #simplifies list and appends previously nested frames
+         drop_na() %>%                 #removes N/As resulting from liked song totals less than 100 multiple
+         right_join(favorite_tracks_stats, by = c("id" = "track.id")) %>%
+         rename (artist.name = name) %>%
+         mutate (
+            duration = duration_ms / 1000 / 60,                      #converts milliseconds to minutes
+            track.name = str_remove (track.name, c("Remaster", "Remastered")),
+            track.name = str_remove (track.name,"[(-].+"),          
+            track.name = ifelse (str_length (track.name) <= 22, track.name, str_extract(track.name, "^.{22}")),
+            release = ifelse (
+               track.album.release_date_precision == "year",         #some songs only lists years not dates
+               as.integer(track.album.release_date),
+               year(as_date(track.album.release_date))
+               ),
+            release = release - 1980                            #enables bar charts to start at 0
+            ) %>%
+         select (artist.name, track.name, danceability, energy, valence, tempo, duration, release) %>%
+         distinct (track.name, .keep_all = T)
+      
+      glimpse (favorite_tracks_features)
 ```
 
 
-4.  Visualize function
-```{r warning = TRUE, results = FALSE, message = FALSE}
+###3a.  Create charts by feature
+Bars represent the top 5 and bottom 5 songs for each attribute.  The bottom rug illustrates the full dispersion.  
+
+A map function is necessary to create the separate charts for each attribute.  The simpler ggplot facet function generates charts via filtering but cannot sort by variable.
+
+```{r charts, warning = FALSE, message = FALSE}
 
    library (glue)
 
+   #define variables to parse charts
+      attributes <- c("valence", "energy", "tempo", "danceability", "duration", "release")
+
    #function to create bar chart for dynamic variable
-      attributes_plot = function(attribute = "tempo") {
+      attributes_plot = function(attribute) {
          attribute = ensym (attribute)
+         #attribute = ifelse(attribute == "duration", attribute, ensym (attribute))
          ggplot (
                data = favorite_tracks_features %>%
                   arrange (-!!attribute) %>%
@@ -135,36 +149,35 @@ The favorite_tracks function returns the output in an unwieldy list format that 
           labs (
              title = glue({str_to_title(attribute)})
              )
-    }
+      }
+      
+   #create charts for each attribute
+   song_plots <- map(attributes, attributes_plot)
 ```
 
 
-#5.  Create and combine charts
-```{r warning = TRUE, results = FALSE, message = FALSE}
+###3b.  Combine charts, add titles/subtitles/captions
+My favorite chart combination package is Thomas Lin Pederson's excellent [patchwork](https://www.rdocumentation.org/packages/patchwork/versions/1.0.0) package.  Charts automatically are aligned vertically and/or horizontally.  I have six charts so by default patchwork prints the first three charts on top row then second three on bottom row.
+```{r combine, warning = TRUE, results = FALSE, message = FALSE}
   
    library (patchwork)
-
-   #define variables to parse charts
-      attributes <- c("valence", "energy", "tempo", "danceability", "duration", "release")
-
-   #create charts for each attribute
-      song_plots <- map(attributes, attributes_plot)
    
    #combine charts into grid
       song_plots_combine <- 
-         song_plots[[1]] + song_plots[[2]]+ song_plots[[3]]+ song_plots[[4]]+ song_plots[[5]]+ song_plots[[6]] +
+         song_plots[[1]] + song_plots[[2]] + song_plots[[3]] + song_plots[[4]] + song_plots[[5]] + song_plots[[6]] +
          plot_annotation (
             title =  "My favorite Spotify songs' attributes",
             subtitle = "Largest 5 per attribute in green, smallest 5 in red.  Bottom rug is entire distribution.",
-            caption = "Duration = song length in minutes.  Release = number of years since 1980.  \nVisualization: Joel Soroos @soroosj    |    Data: Spotify API",
+            caption = "Duration = song length in minutes.  Release = number of years since 1980.  \nVisualization: Joel Soroos @soroosj    |   Data: Spotify API",
             theme = theme (
                plot.title = element_text(hjust = 0.5, vjust = 0, size = 15, face = "bold", margin = margin (0,0,5,0)),
                plot.title.position = "plot",
                plot.subtitle = element_text(hjust = 0.5, vjust = 0, size = 9, margin = margin (0,0,15,0)),
                plot.caption = element_text (hjust = 0, size = 8, face = "plain", margin = margin (15,0,0,0)),
-               plot.caption.position = "plot")
+               plot.caption.position = "plot"
                )
-   
-   #save chart grid to file
+            )
+      
       ggsave("song_attributes.png", song_plots_combine)
+      song_plots_combine
 ```
